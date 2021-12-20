@@ -9,7 +9,7 @@ The differences are in:
 import ray
 import modin.pandas as pd
 import time
-ray.init(address = "auto")
+ray.init(address = "auto", log_to_driver=False)
 
 
 def run_queries(data_folder):
@@ -170,7 +170,8 @@ def q01(lineitem):
             "L_ORDERKEY": "count",
         }
     )
-    total = total.sort_values(["L_RETURNFLAG", "L_LINESTATUS"])
+    # total = total.sort_values(["L_RETURNFLAG", "L_LINESTATUS"])
+    print(total)
     print("Q01 Execution time (s): ", time.time() - t1)
 
 
@@ -196,7 +197,7 @@ def q02(part, partsupp, supplier, nation, region):
     min_values.columns=["P_PARTKEY_CPY", "MIN_SUPPLYCOST"]
     merged_df = merged_df.merge(min_values, left_on=["P_PARTKEY", "PS_SUPPLYCOST"], right_on=["P_PARTKEY_CPY", "MIN_SUPPLYCOST"], how="inner")
     total = merged_df.loc[:, ["S_ACCTBAL", "S_NAME", "N_NAME", "P_PARTKEY", "P_MFGR", "S_ADDRESS", "S_PHONE", "S_COMMENT"]]
-    total = total.sort_values(by=["S_ACCTBAL","N_NAME","S_NAME","P_PARTKEY",], ascending=[False,True,True,True,])
+    # total = total.sort_values(by=["S_ACCTBAL","N_NAME","S_NAME","P_PARTKEY",], ascending=[False,True,True,True,])
     print(total)
     print("Q02 Execution time (s): ", time.time() - t1)
 
@@ -221,7 +222,7 @@ def q03(lineitem, orders, customer):
             "TMP"
         ]
         .sum()
-        .sort_values(["TMP"], ascending=False)
+        # .sort_values(["TMP"], ascending=False)
     )
     res = total.loc[:, ["L_ORDERKEY", "TMP", "O_ORDERDATE", "O_SHIPPRIORITY"]]
     print(res.head(10))
@@ -240,7 +241,7 @@ def q04(lineitem, orders):
     total = (
         jn.groupby("O_ORDERPRIORITY", as_index=False)["O_ORDERKEY"]
         .count()
-        .sort_values(["O_ORDERPRIORITY"])
+        # .sort_values(["O_ORDERPRIORITY"])
     )
     print(total)
     print("Q04 Execution time (s): ", time.time() - t1)
@@ -263,7 +264,8 @@ def q05(lineitem, orders, customer, nation, region, supplier):
     )
     jn5["TMP"] = jn5.L_EXTENDEDPRICE * (1.0 - jn5.L_DISCOUNT)
     gb = jn5.groupby("N_NAME", as_index=False)["TMP"].sum()
-    total = gb.sort_values("TMP", ascending=False)
+    # total = gb.sort_values("TMP", ascending=False)
+    print(gb)
     print("Q05 Execution time (s): ", time.time() - t1)
 
 
@@ -332,7 +334,7 @@ def q07(lineitem, supplier, orders, customer, nation):
     total = pd.concat([total1, total2])
 
     total = total.groupby(["SUPP_NATION", "CUST_NATION", "L_YEAR"], as_index = False).agg(REVENUE=pd.NamedAgg(column="VOLUME", aggfunc="sum"))
-    total = total.sort_values(by=["SUPP_NATION","CUST_NATION","L_YEAR"], ascending=[True,True,True,])
+    # total = total.sort_values(by=["SUPP_NATION","CUST_NATION","L_YEAR"], ascending=[True,True,True,])
     print(total)
     print("Q07 Execution time (s): ", time.time() - t1)
 
@@ -376,7 +378,7 @@ def q08(part, lineitem, supplier, orders, customer, nation, region):
     #modin returns empty column with as_index=false
     total = total.groupby("O_YEAR").apply(udf).reset_index()
     total.columns = ["O_YEAR", "MKT_SHARE"]
-    total = total.sort_values(by=["O_YEAR",], ascending=[True,])
+    # total = total.sort_values(by=["O_YEAR",], ascending=[True,])
     print(total)
     print("Q08 Execution time (s): ", time.time() - t1)
 
@@ -397,8 +399,8 @@ def q09(lineitem, orders, part, nation, partsupp, supplier):
     )
     jn5["O_YEAR"] = jn5.O_ORDERDATE.apply(lambda x: x.year)
     gb = jn5.groupby(["N_NAME", "O_YEAR"], as_index=False)["TMP"].sum()
-    total = gb.sort_values(["N_NAME", "O_YEAR"], ascending=[True, False])
-    print(total)
+    # total = gb.sort_values(["N_NAME", "O_YEAR"], ascending=[True, False])
+    print(gb)
     print("Q09 Execution time (s): ", time.time() - t1)
 
 
@@ -426,8 +428,8 @@ def q10(lineitem, orders, customer, nation):
         ],
         as_index=False,
     )["TMP"].sum()
-    total = gb.sort_values("TMP", ascending=False)
-    print(total.head(20))
+    # total = gb.sort_values("TMP", ascending=False)
+    print(gb.head(20))
     print("Q10 Execution time (s): ", time.time() - t1)
 
 def q11(partsupp, supplier, nation):
@@ -444,7 +446,7 @@ def q11(partsupp, supplier, nation):
     sum_val = ps_supp_n_merge["TOTAL_COST"].sum() * 0.0001
     total = ps_supp_n_merge.groupby(["PS_PARTKEY"], as_index = False).agg(VALUE=pd.NamedAgg(column="TOTAL_COST", aggfunc="sum"))
     total = total[total["VALUE"] > sum_val]
-    total = total.sort_values("VALUE", ascending=False)
+    # total = total.sort_values("VALUE", ascending=False)
     print(total)
     print("Q11 Execution time (s): ", time.time() - t1)
 
@@ -471,9 +473,9 @@ def q12(lineitem, orders):
     def g2(x):
         return ((x != "1-URGENT") & (x != "2-HIGH")).sum()
 
-    total = jn.groupby("L_SHIPMODE", as_index=False)["O_ORDERPRIORITY"].agg((g1, g2))
-    total = total.sort_values("L_SHIPMODE")
-    print(total)
+    # total = jn.groupby("L_SHIPMODE", as_index=False)["O_ORDERPRIORITY"].agg((g1, g2))
+    # total = total.sort_values("L_SHIPMODE")
+    print(jn)
     print("Q12 Execution time (s): ", time.time() - t1)
 
 
@@ -487,7 +489,7 @@ def q13(customer, orders):
     count_df = c_o_merged.groupby(["C_CUSTKEY"], as_index=False).agg(C_COUNT=pd.NamedAgg(column="O_ORDERKEY", aggfunc="count"))
     total = count_df.groupby(["C_COUNT"], as_index = False).size()
     total.columns = ["C_COUNT","CUSTDIST"]
-    total = total.sort_values(by=["CUSTDIST","C_COUNT"], ascending=[False,False,])
+    # total = total.sort_values(by=["CUSTDIST","C_COUNT"], ascending=[False,False,])
     print(total)
     print("Q13 Execution time (s): ", time.time() - t1)
 
@@ -542,7 +544,7 @@ def q16(part, partsupp, supplier):
     total = total.loc[:, ["P_BRAND", "P_TYPE", "P_SIZE", "PS_SUPPKEY"]]
     total = total.groupby(["P_BRAND", "P_TYPE", "P_SIZE"], as_index=False)["PS_SUPPKEY"].nunique()
     total.columns = ["P_BRAND", "P_TYPE", "P_SIZE", "SUPPLIER_CNT"]
-    total = total.sort_values(by=["SUPPLIER_CNT", "P_BRAND", "P_TYPE", "P_SIZE"], ascending=[False, True, True, True])
+    # total = total.sort_values(by=["SUPPLIER_CNT", "P_BRAND", "P_TYPE", "P_SIZE"], ascending=[False, True, True, True])
     print(total)
     print("Q16 Execution time (s): ", time.time() - t1)
 
@@ -575,8 +577,8 @@ def q18(lineitem, orders, customer):
         ["C_NAME", "C_CUSTKEY", "O_ORDERKEY", "O_ORDERDATE", "O_TOTALPRICE"],
         as_index=False,
     )["L_QUANTITY"].sum()
-    total = gb2.sort_values(["O_TOTALPRICE", "O_ORDERDATE"], ascending=[False, True])
-    print(total.head(100))
+    # total = gb2.sort_values(["O_TOTALPRICE", "O_ORDERDATE"], ascending=[False, True])
+    print(gb2.head(100))
     print("Q18 Execution time (s): ", time.time() - t1)
 
 
@@ -705,8 +707,8 @@ def q20(lineitem, part, nation, partsupp, supplier):
     jn3 = fgb.merge(supplier, left_on="PS_SUPPKEY", right_on="S_SUPPKEY")
     jn4 = fnation.merge(jn3, left_on="N_NATIONKEY", right_on="S_NATIONKEY")
     jn4 = jn4.loc[:, ["S_NAME", "S_ADDRESS"]]
-    total = jn4.sort_values("S_NAME").drop_duplicates()
-    print(total)
+    # total = jn4.sort_values("S_NAME").drop_duplicates()
+    print(jn4)
     print("Q20 Execution time (s): ", time.time() - t1)
 
 
@@ -751,7 +753,7 @@ def q21(lineitem, orders, supplier, nation):
     total = total.loc[:, ["S_NAME"]]
     total = total.groupby("S_NAME", as_index=False).size()
     total.columns = ["S_NAME", "NUMWAIT"]
-    total = total.sort_values(by=["NUMWAIT","S_NAME",], ascending=[False,True,])
+    # total = total.sort_values(by=["NUMWAIT","S_NAME",], ascending=[False,True,])
     print(total)
     print("Q21 Execution time (s): ", time.time() - t1)
 
@@ -775,15 +777,14 @@ def q22(customer, orders):
     agg1.columns = ["CNTRYCODE", "NUMCUST"]
     agg2 = customer_selected.groupby(["CNTRYCODE"], as_index = False).agg(TOTACCTBAL=pd.NamedAgg(column="C_ACCTBAL", aggfunc="sum"))
     total = agg1.merge(agg2, on="CNTRYCODE", how="inner")
-    total = total.sort_values(by=["CNTRYCODE",], ascending=[True,])
+    # total = total.sort_values(by=["CNTRYCODE",], ascending=[True,])
     print(total)
     print("Q22 Execution time (s): ", time.time() - t1)
 
 
-@ray.remote
 def main():
-    path = "/path/to/SF10"
+    path = "/localdisk/aprutsko/tpch-data"
     run_queries(path)
 
 
-ray.get(main.remote())
+main()

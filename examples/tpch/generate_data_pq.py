@@ -27,7 +27,7 @@ from loader import (
 )
 
 # Change location of tpch-dbgen if not in same place as this script
-tpch_dbgen_location = "./tpch-dbgen"
+tpch_dbgen_location = "/localdisk/aprutsko/tpch-dbgen"
 
 # First element is the table single character short-hand understood by dbgen
 # Second element is the number of pieces we want the parquet dataset to have for that table
